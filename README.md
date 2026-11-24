@@ -50,7 +50,7 @@ make check
 开发和测试不会自动安装插件。需要使用临时重定向审批时，再自行执行：
 
 ```sh
-codex plugin marketplace add /Users/zmceadmk/Code/codex-plugins
+codex plugin marketplace add "$PWD"
 codex plugin add tmp-redirect-approval@mbda9091-codex-plugins
 ```
 
@@ -59,6 +59,12 @@ codex plugin add tmp-redirect-approval@mbda9091-codex-plugins
 所有 Hook 使用 `python3.14`；`PermissionRequest` 有规则文件时还调用 `codex execpolicy check`。Codex 启动环境必须能解析对应命令；开发项目的 `.venv` 不会自动成为 Hook 解释器。示例命令面向 macOS/Linux。其他电脑或容器需要独立安装 Python 3.14 并确认 PATH，不能复用本机 `.venv`。
 
 多机分发时将仓库推送到自己的 Git 服务，再用固定 Git ref 添加 marketplace。
+
+## 仓库安全检查
+
+`repo-security` 在 `.security/` 中管理 Gitleaks、Semgrep 和 Presidio，并注册仓库本地的 Git pre-commit 检查。扫描工具使用独立的 Python 3.13 环境，不依赖插件的开发环境。
+
+已初始化的仓库可用 `repo-security doctor .` 检查工具状态。其他机器克隆后，执行 `.security/setup.sh` 安装扫描工具并注册本地检查。提交前自动扫描暂存区中新增或修改的文件。
 
 ## Git 与边界
 
