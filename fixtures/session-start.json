@@ -1,0 +1,6 @@
+{
+  "hook_event_name": "SessionStart",
+  "source": "startup",
+  "session_id": "fixture-session",
+  "cwd": "/tmp/codex-hooks-example"
+}
