@@ -53,7 +53,7 @@ make pack PLUGIN=tmp-redirect-approval
 
 ```sh
 codex plugin marketplace add /Users/zmceadmk/Code/codex-plugins
-codex plugin add tmp-redirect-approval@codex-plugins-local
+codex plugin add tmp-redirect-approval@mbda9091-codex-plugins
 ```
 
 新建 Codex 会话，通过 `/hooks` 检查并审查信任。插件缓存是安装副本，修改仓库脚本后需要更新安装副本并重新审查变化。若已启用旧的 `tmp-redirect-approval@dshplugins-codex-local`，在切换时停用旧来源的插件，避免重复注册。本次源码迁移不执行安装或切换。

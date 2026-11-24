@@ -1,5 +1,5 @@
 {
-  "name": "codex-plugins-local",
+  "name": "mbda9091-codex-plugins",
   "plugins": [
     {
       "name": "tmp-redirect-approval",

@@ -39,4 +39,4 @@ make pack PLUGIN=tmp-redirect-approval
 
 本次只迁入源码、事件注册、测试和打包支持，旧仓库及本机已安装的插件副本保持不动。
 
-后续切换到 `tmp-redirect-approval@codex-plugins-local` 时，应停用旧的 `tmp-redirect-approval@dshplugins-codex-local`，避免重复注册同一审批功能。安装和信任由用户单独操作，入口见根目录 README。
+后续切换到 `tmp-redirect-approval@mbda9091-codex-plugins` 时，应停用旧的 `tmp-redirect-approval@dshplugins-codex-local`，避免重复注册同一审批功能。安装和信任由用户单独操作，入口见根目录 README。
