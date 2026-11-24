@@ -1,9 +1,8 @@
 import json
 import os
+import shutil
 import subprocess
-import sys
 import tempfile
-import zipfile
 from pathlib import Path
 from typing import TypedDict, cast
 
@@ -22,36 +21,13 @@ class HookDocument(TypedDict):
     hooks: dict[str, list[MatcherGroup]]
 
 
-def test_packaged_hook_runs_from_path_with_spaces(tmp_path: Path) -> None:
-    output = tmp_path / "release output"
-    built = subprocess.run(
-        [
-            sys.executable,
-            "-B",
-            str(ROOT / "scripts/build_plugin.py"),
-            "--plugin",
-            "tmp-redirect-approval",
-            "--output",
-            str(output),
-        ],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=10,
+def test_registered_hook_runs_from_path_with_spaces(tmp_path: Path) -> None:
+    cached = tmp_path / "plugin copy with spaces"
+    shutil.copytree(
+        ROOT / "plugins/tmp-redirect-approval",
+        cached,
+        ignore=shutil.ignore_patterns("__pycache__"),
     )
-    artifact = Path(built.stdout.strip())
-    with zipfile.ZipFile(artifact) as archive:
-        assert set(archive.namelist()) == {
-            "plugin.json",
-            "hooks/hooks.json",
-            "hooks/permission_request.py",
-        }
-        manifest = cast("dict[str, object]", json.loads(archive.read("plugin.json")))
-        assert manifest["name"] == "tmp-redirect-approval"
-        assert artifact.name == "tmp-redirect-approval-0.1.0.zip"
-        cached = tmp_path / "plugin cache with spaces"
-        archive.extractall(cached)
     hooks = cast(
         "HookDocument",
         json.loads((cached / "hooks/hooks.json").read_text(encoding="utf-8")),
@@ -60,7 +36,7 @@ def test_packaged_hook_runs_from_path_with_spaces(tmp_path: Path) -> None:
     environment = {**os.environ, "PLUGIN_ROOT": str(cached)}
 
     command = hooks["hooks"]["PermissionRequest"][0]["hooks"][0]["command"]
-    with tempfile.TemporaryDirectory(prefix="codex-packaged-redirect-", dir="/tmp") as directory:
+    with tempfile.TemporaryDirectory(prefix="codex-registered-redirect-", dir="/tmp") as directory:
         target = Path(directory) / "candidate output.log"
         marker = Path(directory) / "candidate executed"
         result = subprocess.run(

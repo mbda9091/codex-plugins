@@ -28,15 +28,14 @@ Hook 不执行候选命令，不打开重定向目标写入，不改写命令或
 
 ```sh
 make check
-make pack PLUGIN=tmp-redirect-approval
 ```
 
-`make check` 使用 pytest 覆盖命令语法、临时路径与链接、真实 `execpolicy` 规则、异常回退和 stdin/stdout 协议。打包测试验证 ZIP 文件只含 JSON 和 Python 脚本，并从带空格的解压路径启动已注册的 Hook。
+`make check` 使用 pytest 覆盖命令语法、临时路径与链接、真实 `execpolicy` 规则、异常回退和 stdin/stdout 协议。插件注册测试验证 marketplace 指向有效插件，并从带空格的源码副本路径启动已注册的 Hook。
 
 子进程协议测试使用临时 cwd 和 `CODEX_HOME`，验证候选命令与重定向均不执行。测试不启动真实 Codex 会话，不安装或启用插件，不改用户 hook 注册，也不授予信任。
 
 ## 安装切换边界
 
-本次只迁入源码、事件注册、测试和打包支持，旧仓库及本机已安装的插件副本保持不动。
+本次只迁入源码、事件注册、测试和 marketplace 配置，旧仓库及本机已安装的插件副本保持不动。
 
 后续切换到 `tmp-redirect-approval@mbda9091-codex-plugins` 时，应停用旧的 `tmp-redirect-approval@dshplugins-codex-local`，避免重复注册同一审批功能。安装和信任由用户单独操作，入口见根目录 README。

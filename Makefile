@@ -1,4 +1,4 @@
-.PHONY: sync lint format typecheck test check pack
+.PHONY: sync lint format typecheck test check
 
 sync:
 	uv sync --locked --python 3.14.10
@@ -17,7 +17,3 @@ test:
 	uv run pytest
 
 check: lint typecheck test
-
-pack:
-	@test -n "$(strip $(PLUGIN))" || { echo 'Usage: make pack PLUGIN=<plugin-name>' >&2; exit 2; }
-	uv run python scripts/build_plugin.py --plugin "$(PLUGIN)"
