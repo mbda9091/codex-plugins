@@ -19,4 +19,5 @@ test:
 check: lint typecheck test
 
 pack:
-	uv run python scripts/build_plugin.py
+	@test -n "$(strip $(PLUGIN))" || { echo 'Usage: make pack PLUGIN=<plugin-name>' >&2; exit 2; }
+	uv run python scripts/build_plugin.py --plugin "$(PLUGIN)"

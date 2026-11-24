@@ -1,11 +1,11 @@
 {
-  "name": "codex-hooks-local",
+  "name": "codex-plugins-local",
   "plugins": [
     {
-      "name": "personal-hooks",
+      "name": "tmp-redirect-approval",
       "source": {
         "source": "local",
-        "path": "./plugins/personal-hooks"
+        "path": "./plugins/tmp-redirect-approval"
       },
       "policy": {
         "installation": "AVAILABLE",
