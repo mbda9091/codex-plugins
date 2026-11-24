@@ -33,7 +33,7 @@ make check
 
 ## 添加 Hook
 
-1. 由用户指定 Plugin 名称；新插件创建 `plugins/<plugin-name>/`，在 `plugin.json` 中使用相同的 `name`。也可以向已有插件增加 Hook。
+1. 由用户指定 Plugin 名称；新插件创建 `plugins/<plugin-name>/`，在 `.codex-plugin/plugin.json` 中使用相同的 `name`。也可以向已有插件增加 Hook。
 2. 在其 `hooks/` 下添加 Python 脚本和 `hooks.json`，使用 `${PLUGIN_ROOT}` 定位脚本。
 3. 在 `.agents/plugins/marketplace.json` 中登记同名插件及其目录。
 4. 在 `tests/<plugin-name>/` 按源码目录增加允许、拒绝、故障及适用的路径测试，测试样本跟随所属测试存放。
@@ -43,7 +43,9 @@ make check
 
 ## 测试验证
 
-协议测试从不同 cwd 启动脚本，并验证 JSON、stderr 和退出码。插件注册测试将源码复制到带空格的临时路径，验证注册的 Hook 命令可运行。审批测试还验证候选命令和重定向均不执行。它们没有启动真实 Codex 会话，也不会修改 `~/.codex`、安装插件或授予 Hook 信任。
+协议测试从不同 cwd 启动脚本，并验证 JSON、stderr 和退出码。插件注册测试将源码复制到带空格的临时路径，验证注册的 Hook 命令可运行。发现测试使用隔离的 `CODEX_HOME`，通过 app-server 的只读 `plugin/read` 确认 Codex 能发现 `PermissionRequest` Hook，且插件仍未安装。审批测试还验证候选命令和重定向均不执行。这些测试不创建聊天会话，不修改 `~/.codex`，不安装或启用插件，也不授予 Hook 信任。
+
+当前使用 `.codex-plugin/plugin.json` 兼容清单。Codex 0.172.0 会跳过根目录 `plugin.json` 的 Agent Plugins 格式中的 Hook，即使安装成功，`plugin/read` 也会返回空 Hook 列表。详见[上游问题](https://github.com/openai/codex/issues/47925)。
 
 ## 可选：安装到 Codex
 

@@ -2,6 +2,8 @@
 
 该 Hook 从 `dshplugins/codex-plugins/tmp-redirect-approval` 迁入，保留独立插件名 `tmp-redirect-approval`。运行脚本和测试均已改写为 Python，运行时只依赖标准库，沿用原审批规则。脚本位于 `plugins/tmp-redirect-approval/hooks/permission_request.py`，事件注册位于同目录的 `hooks.json`。
 
+插件清单位于 `.codex-plugin/plugin.json`，直接声明 `hooks`。这是对 Codex 0.172.0 跳过新版根目录清单中 Hook 的兼容处理；仅添加兼容清单、同时保留新版根目录清单不能解决该问题。版本 0.1.1 使用兼容格式，发现测试通过只读 `plugin/read` 验证事件可见，且不安装插件。参见[上游问题](https://github.com/openai/codex/issues/47925)。
+
 ## 审批规则
 
 只处理 `PermissionRequest` 的 `Bash` 工具事件。`cwd` 必须为绝对路径；指定了 `permission_mode` 时，只接受 `default` 或 `acceptEdits`。

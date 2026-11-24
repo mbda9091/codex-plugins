@@ -1,8 +1,11 @@
 import json
 import os
+import queue
+import shlex
 import shutil
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 from typing import TypedDict, cast
 
@@ -36,11 +39,12 @@ def test_registered_hook_runs_from_path_with_spaces(tmp_path: Path) -> None:
     environment = {**os.environ, "PLUGIN_ROOT": str(cached)}
 
     command = hooks["hooks"]["PermissionRequest"][0]["hooks"][0]["command"]
+    arguments = [part.replace("${PLUGIN_ROOT}", str(cached)) for part in shlex.split(command)]
     with tempfile.TemporaryDirectory(prefix="codex-registered-redirect-", dir="/tmp") as directory:
         target = Path(directory) / "candidate output.log"
         marker = Path(directory) / "candidate executed"
         result = subprocess.run(
-            command,
+            arguments,
             input=json.dumps(
                 {
                     "hook_event_name": "PermissionRequest",
@@ -52,7 +56,6 @@ def test_registered_hook_runs_from_path_with_spaces(tmp_path: Path) -> None:
             ),
             cwd=tmp_path,
             env={**environment, "CODEX_HOME": str(tmp_path / "isolated codex home")},
-            shell=True,
             capture_output=True,
             text=True,
             check=True,
@@ -77,7 +80,80 @@ def test_marketplace_points_to_a_complete_plugin() -> None:
     relative = marketplace["plugins"][0]["source"]["path"]
     plugin = (ROOT / relative).resolve()
     assert plugin.is_relative_to(ROOT)
-    assert (plugin / "plugin.json").is_file()
+    assert (plugin / ".codex-plugin/plugin.json").is_file()
     assert (plugin / "hooks/hooks.json").is_file()
-    manifest = cast("dict[str, object]", json.loads((plugin / "plugin.json").read_text()))
+    manifest = cast(
+        "dict[str, object]", json.loads((plugin / ".codex-plugin/plugin.json").read_text())
+    )
     assert plugin.name == manifest["name"] == "tmp-redirect-approval"
+
+
+def test_codex_discovers_permission_request_without_installing(tmp_path: Path) -> None:
+    codex_home = tmp_path / "isolated-codex-home"
+    codex_home.mkdir()
+    replies: queue.Queue[dict[str, object]] = queue.Queue()
+    with subprocess.Popen(
+        ["codex", "app-server", "--stdio"],
+        cwd=tmp_path,
+        env={**os.environ, "CODEX_HOME": str(codex_home)},
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        bufsize=1,
+    ) as process:
+        stdin, stdout = process.stdin, process.stdout
+        assert stdin is not None and stdout is not None
+
+        def read_replies() -> None:
+            for line in stdout:
+                value: object = json.loads(line)
+                if isinstance(value, dict):
+                    replies.put(cast("dict[str, object]", value))
+
+        reader = threading.Thread(target=read_replies, daemon=True)
+        reader.start()
+
+        def request(identifier: int, method: str, params: dict[str, object]) -> dict[str, object]:
+            stdin.write(json.dumps({"id": identifier, "method": method, "params": params}) + "\n")
+            stdin.flush()
+            while True:
+                reply = replies.get(timeout=20)
+                if reply.get("id") == identifier:
+                    assert "error" not in reply, reply
+                    return cast("dict[str, object]", reply["result"])
+
+        try:
+            request(
+                1,
+                "initialize",
+                {
+                    "clientInfo": {"name": "plugin_discovery_test", "title": None, "version": "1"},
+                    "capabilities": {"experimentalApi": True, "requestAttestation": False},
+                },
+            )
+            stdin.write(json.dumps({"method": "initialized"}) + "\n")
+            stdin.flush()
+            result = request(
+                2,
+                "plugin/read",
+                {
+                    "marketplacePath": str(ROOT / ".agents/plugins/marketplace.json"),
+                    "pluginName": "tmp-redirect-approval",
+                },
+            )
+            plugin = cast("dict[str, object]", result["plugin"])
+            summary = cast("dict[str, object]", plugin["summary"])
+            discovered = cast("list[dict[str, object]]", plugin["hooks"])
+            assert summary["installed"] is False
+            assert [(hook["eventName"], hook["key"]) for hook in discovered] == [
+                (
+                    "permissionRequest",
+                    "tmp-redirect-approval@mbda9091-codex-plugins:"
+                    "hooks/hooks.json:permission_request:0:0",
+                )
+            ]
+        finally:
+            process.terminate()
+            process.wait(timeout=5)
+            reader.join(timeout=5)
